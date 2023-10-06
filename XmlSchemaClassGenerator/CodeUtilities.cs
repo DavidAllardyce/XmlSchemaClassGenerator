@@ -290,23 +290,25 @@ namespace XmlSchemaClassGenerator
 
         public static XmlQualifiedName GetQualifiedName(this TypeModel typeModel)
         {
-            XmlQualifiedName qualifiedName;
-            if (typeModel is not SimpleModel simpleTypeModel)
+            return typeModel switch
             {
-                qualifiedName = typeModel.IsAnonymous ? typeModel.XmlSchemaName
-                    : typeModel.XmlSchemaType.GetQualifiedName();
-            }
-            else
+                { XmlSchemaType: null } => typeModel.XmlSchemaName,
+                SimpleModel simpleModel => GetQualifiedName(simpleModel),
+                { IsAnonymous: true }   => typeModel.XmlSchemaName,
+                _                       => typeModel.XmlSchemaType.GetQualifiedName()
+            };
+
+            static XmlQualifiedName GetQualifiedName(SimpleModel simpleTypeModel)
             {
-                qualifiedName = simpleTypeModel.XmlSchemaType.GetQualifiedName();
+                var qualifiedName = simpleTypeModel.XmlSchemaType.GetQualifiedName();
                 var xmlSchemaType = simpleTypeModel.XmlSchemaType;
                 while (qualifiedName.Namespace != XmlSchema.Namespace && xmlSchemaType.BaseXmlSchemaType != null)
                 {
                     xmlSchemaType = xmlSchemaType.BaseXmlSchemaType;
                     qualifiedName = xmlSchemaType.GetQualifiedName();
                 }
+                return qualifiedName;
             }
-            return qualifiedName;
         }
 
         public static string GetUniqueTypeName(this NamespaceModel model, string name)
